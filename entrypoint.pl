@@ -26,9 +26,9 @@ if ($ENV{DEV_MODE}) {
     }
 }
 
-$ENV{PSGI} ||= '/opt/perl5/bin/opusvl_fb11website.psgi';
-
 exec @ARGV if @ARGV;
+
+die "I don't know what to run! Please set \$PSGI" unless $ENV{PSGI};
 
 my @cmd;
 
