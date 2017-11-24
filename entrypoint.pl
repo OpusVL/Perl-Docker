@@ -1,9 +1,12 @@
-#!/opt/perl5/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
 use v5.20;
 use Path::Class;
+# We'll use Config to find the bin path, but if you want to Dockerise a system
+# that doesn't use / for directories that's your fault
+use Config;
 
 if ($ENV{LOCAL_LIBS}) {
     for my $lib (split /:/, $ENV{LOCAL_LIBS}) {
@@ -33,25 +36,25 @@ my $PORT = $ENV{FB11_PORT} || 5000;
 
 # in DEV_MODE we ignore MEMORY_LIMIT and WORKERS
 if ($ENV{DEV_MODE}) {
-    @cmd = (qw(/opt/perl5/bin/plackup --port), $PORT);
+    @cmd = ($Config{bin} . '/plackup', '--port', $PORT);
 
     if ($ENV{DEBUG_CONSOLE} or -t STDOUT) {
-        unshift @cmd, qw(/opt/perl5/bin/perl -d);
+        unshift @cmd, $^X, qw(-d);
     }
 }
 else {
-    @cmd = (qw(/opt/perl5/bin/starman --server Martian --listen), ":$PORT");
-    
+    @cmd = ($CONFIG{bin} . '/starman', qw( --server Martian --listen), ":$PORT");
+
     if ($ENV{MEMORY_LIMIT}) {
         push @cmd, '--memory-limit', $ENV{MEMORY_LIMIT};
     }
-    
+
     if ($ENV{WORKERS}) {
         push @cmd, '--workers', $ENV{WORKERS};
     }
 
     if ($ENV{STACKTRACE}) {
-        unshift @cmd, qw(/opt/perl5/bin/perl -d:Confess);
+        unshift @cmd, $^X, '-d:Confess';
     }
 
     # this is 2>&1, which we do for not-dev-mode
@@ -83,6 +86,10 @@ sub installdeps {
         next unless $_->is_dir;
         next unless -e $_->subdir('lib');
         say "Installing deps for $_";
-        system( qw(/opt/perl5/bin/cpanm -M http://cpan.opusvl.com --installdeps -nvl), $ENV{HOME}, $_ );
+
+        # Notest install to make it as cheap as possible to restart the
+        # container. Install to $ENV{HOME} so you can separate your layers if
+        # you want to.
+        system( $Config{bin} . '/cpanm', qw(--installdeps -nvl), $ENV{HOME}, $_ );
     }
 }
