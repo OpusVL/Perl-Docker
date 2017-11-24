@@ -1,0 +1,26 @@
+FROM <YOURPROJECT>
+MAINTAINER <YOU>
+
+ARG version
+RUN if [[ -z "$version" ]]; then \
+    echo "version not set; use --build-arg version=VERSION"; \
+    exit 1; fi
+ARG revision
+RUN if [[ -z "$revision" ]]; then \
+    echo "revision not set; use --build-arg revision=$(git rev-parse HEAD) or something"; \
+    exit 1; fi
+
+USER root
+# You might want some global cpanm options
+#ENV PERL_CPANM_OPT='-M http://your-mirror.com --build-timeout 84000'
+
+COPY vendor/ /root/vendor
+RUN cpanm /root/vendor/*.tar.gz
+
+RUN rm -r /root/vendor/
+
+RUN echo "$revision" > /root/git-revision.txt
+COPY *-${version}.tar.gz /root
+RUN cpanm /root/*.gz
+
+USER <APPUSER>
