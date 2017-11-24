@@ -32,7 +32,7 @@ die "I don't know what to run! Please set \$PSGI" unless $ENV{PSGI};
 
 my @cmd;
 
-my $PORT = $ENV{FB11_PORT} || 5000;
+my $PORT = $ENV{PSGI_PORT} || 5000;
 
 # in DEV_MODE we ignore MEMORY_LIMIT and WORKERS
 if ($ENV{DEV_MODE}) {
